@@ -1,6 +1,5 @@
 # OpenCityMap
 Mappe e analisi spaziali sulle città italiane, costruite con dati aperti.
+Sito: https://<nomeutente>.github.io/open-city-map/
 
-Sito: https://<nomeutente>.github.io/zona-per-zona/
-
-Dati © contributori di OpenStreetMap
+Dati © contributori di OpenStreetMap e fonti opensource
