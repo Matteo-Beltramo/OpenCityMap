@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GTT in tempo reale · Open City Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Public+Sans:wght@400;500;650&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+    --nav-h: 56px;
+
+    --bg: #eef1f3;
+    --surface: #f8f9fa;
+    --ink: #142033;
+    --muted: #586375;
+    --line: rgba(20, 32, 51, 0.14);
+    --accent: #0b6b7c;
+    --accent-ink: #ffffff;
+    --map-bg: #e3e7ea;
+    --nav-bg: rgba(238, 241, 243, 0.88);
+    --panel-bg: rgba(248, 249, 250, 0.94);
+    --btn-bg: #ffffff;
+    --btn-hover: #e9edf0;
+    --focus: #1f6fd1;
+    --vehicle: #0b6b7c;
+    --vehicle-ink: #ffffff;
+    --vehicle-ring: #ffffff;
+    --live: #1a9a4b;
+    --error: #c0392b;
+    --shadow: 0 10px 30px rgba(20, 32, 51, 0.12);
+    color-scheme: light;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12171e;
+      --surface: #1a2029;
+      --ink: #e8ecf1;
+      --muted: #9aa5b3;
+      --line: rgba(255, 255, 255, 0.12);
+      --accent: #5fc4d6;
+      --accent-ink: #0d1a20;
+      --map-bg: #161b22;
+      --nav-bg: rgba(18, 23, 30, 0.86);
+      --panel-bg: rgba(26, 32, 41, 0.93);
+      --btn-bg: #232a34;
+      --btn-hover: #2d3642;
+      --focus: #7fb4ff;
+      --vehicle: #5fc4d6;
+      --vehicle-ink: #0d1a20;
+      --vehicle-ring: #0d1a20;
+      --live: #4cd07d;
+      --error: #ff6b5e;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12171e;
+    --surface: #1a2029;
+    --ink: #e8ecf1;
+    --muted: #9aa5b3;
+    --line: rgba(255, 255, 255, 0.12);
+    --accent: #5fc4d6;
+    --accent-ink: #0d1a20;
+    --map-bg: #161b22;
+    --nav-bg: rgba(18, 23, 30, 0.86);
+    --panel-bg: rgba(26, 32, 41, 0.93);
+    --btn-bg: #232a34;
+    --btn-hover: #2d3642;
+    --focus: #7fb4ff;
+    --vehicle: #5fc4d6;
+    --vehicle-ink: #0d1a20;
+    --vehicle-ring: #0d1a20;
+    --live: #4cd07d;
+    --error: #ff6b5e;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  html { background: var(--map-bg); }
+  body {
+    margin: 0;
+    background: var(--map-bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+  /* mappa a tutto schermo */
+  #map { position: fixed; inset: 0; z-index: 0; background: var(--map-bg); }
+  .leaflet-container { font-family: var(--sans); background: var(--map-bg); }
+  .leaflet-bottom { bottom: env(safe-area-inset-bottom, 0px); }
+  .leaflet-control-attribution { background: var(--panel-bg) !important; color: var(--muted); font-size: 0.6875rem; border-top-left-radius: 6px; }
+  .leaflet-control-attribution a { color: var(--muted); }
+  .leaflet-control-scale-line { background: var(--panel-bg); color: var(--ink); border-color: var(--muted); }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel-bg); color: var(--ink); box-shadow: var(--shadow); }
+  .leaflet-popup-content { margin: 12px 16px; font-size: 0.8125rem; line-height: 1.45; }
+  .leaflet-popup-content strong { display: block; font-family: var(--display); font-weight: 600; font-size: 1.375rem; line-height: 1.1; margin-bottom: 2px; }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+
+  /* mezzi */
+  .veh { width: 0; height: 0; }
+  .veh .dot {
+    position: absolute; left: -6px; top: -6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--vehicle);
+    border: 2px solid var(--vehicle-ring);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  .veh .arrow {
+    position: absolute; left: -10px; top: -10px;
+    width: 20px; height: 20px;
+    transform-origin: 50% 50%;
+  }
+  .veh .arrow::before {
+    content: "";
+    position: absolute; left: 6px; top: -3px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 6px solid var(--vehicle);
+  }
+  .veh .lbl {
+    display: none;
+    position: absolute; left: 9px; top: -9px;
+    padding: 1px 6px;
+    font: 650 0.6875rem/1.4 var(--sans);
+    color: var(--vehicle-ink);
+    background: var(--vehicle);
+    border: 1.5px solid var(--vehicle-ring);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .show-labels .veh .lbl { display: block; }
+
+  /* barra in alto */
+  .top {
+    position: fixed;
+    top: env(safe-area-inset-top, 0px);
+    left: 0; right: 0;
+    z-index: 9;
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 clamp(16px, 4vw, 40px);
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { font-family: var(--display); font-weight: 600; font-size: 1.4rem; color: var(--ink); text-decoration: none; white-space: nowrap; }
+  .back { margin-left: auto; font-size: 0.875rem; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  .back:hover { color: var(--ink); }
+
+  /* pannello */
+  .panel {
+    position: fixed;
+    z-index: 5;
+    top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 16px);
+    left: 16px;
+    width: 320px;
+    max-width: calc(100% - 32px);
+    max-height: calc(100% - var(--nav-h) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 48px);
+    overflow: auto;
+    padding: 18px 18px 14px;
+    background: var(--panel-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .panel h1 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1.75rem; line-height: 1; }
+  .count { margin: 6px 0 2px; font-size: 1rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .status { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .status.live::before { background: var(--live); }
+  .status.error { color: var(--error); }
+  .status.error::before { background: var(--error); }
+  .panel-toggle { display: none; flex: none; padding: 6px 10px; font: 500 0.8125rem/1 var(--sans); color: var(--ink); background: var(--btn-bg); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+
+  .lines-head { display: flex; align-items: baseline; justify-content: space-between; margin: 16px 0 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .lines-head h2 { margin: 0; font-size: 0.875rem; font-weight: 650; }
+  .lines-head button { padding: 0; font: inherit; font-size: 0.8125rem; color: var(--accent); background: none; border: 0; cursor: pointer; }
+  .lines-head button[hidden] { display: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 168px; overflow: auto; }
+  .chip {
+    padding: 4px 9px;
+    font: 500 0.8125rem/1.2 var(--sans);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: var(--btn-bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .chip small { color: var(--muted); font-size: 0.6875rem; margin-left: 3px; }
+  .chip[aria-pressed="true"] { color: var(--vehicle-ink); background: var(--vehicle); border-color: var(--vehicle); }
+  .chip[aria-pressed="true"] small { color: inherit; opacity: 0.8; }
+  .empty { margin: 0; color: var(--muted); }
+  .note { margin: 14px 0 0; font-size: 0.75rem; color: var(--muted); }
+  .note a { color: inherit; }
+
+  .controls { position: fixed; z-index: 5; top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 16px); right: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .controls button { width: 40px; height: 40px; font: 500 1.125rem/1 var(--sans); color: var(--ink); background: var(--btn-bg); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; box-shadow: var(--shadow); }
+  .controls button:hover { background: var(--btn-hover); }
+  .controls svg { display: block; margin: auto; }
+
+  @media (max-width: 640px) {
+    .brand { font-size: 1.25rem; }
+    .panel {
+      top: auto;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+      left: 12px; right: 12px;
+      width: auto; max-width: none;
+      max-height: 55%;
+      padding: 14px 14px 10px;
+    }
+    .panel h1 { font-size: 1.5rem; }
+    .panel-toggle { display: block; }
+    .panel.collapsed .panel-body { display: none; }
+    .controls { top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 12px); right: 12px; }
+    .leaflet-bottom.leaflet-left { bottom: auto; top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 4px); }
+  }
+</style>
+</head>
+<body>
+
+<div id="map" aria-label="Mappa di Torino con le posizioni in tempo reale dei mezzi GTT"></div>
+
+<header class="top">
+  <a class="brand" href="../../">Open City Map</a>
+  <a class="back" href="../../">← Torna al sito</a>
+</header>
+
+<section class="panel" id="panel" aria-labelledby="title">
+  <div class="panel-head">
+    <div>
+      <h1 id="title">GTT in tempo reale</h1>
+      <p class="count" id="count">Caricamento…</p>
+      <p class="status" id="status">Connessione in corso</p>
+    </div>
+    <button type="button" class="panel-toggle" id="panel-toggle" aria-expanded="true" aria-controls="panel-body">Nascondi</button>
+  </div>
+  <div class="panel-body" id="panel-body">
+    <div class="lines-head">
+      <h2>Linee in servizio</h2>
+      <button type="button" id="clear" hidden>Mostra tutte</button>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filtra per linea"></div>
+    <p class="note">Tocca una o più linee per vedere solo quelle; tocca un mezzo per i dettagli. Dati: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> (https://busone.app) e GTT, open data.</p>
+  </div>
+</section>
+
+<div class="controls">
+  <button type="button" id="zin" aria-label="Ingrandisci">+</button>
+  <button type="button" id="zout" aria-label="Riduci">−</button>
+  <button type="button" id="zreset" aria-label="Mostra tutta Torino">
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 6V2h4M12 2h4v4M16 12v4h-4M6 16H2v-4"/></svg>
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* =========================================================
+   IMPOSTAZIONI MODIFICABILI
+   ========================================================= */
+
+// Chiave CARTO per lo sfondo (la stessa del sito). Vuota ("") = sfondo Esri.
+const CARTO_KEY = "cb1_4zwp_1_053112c172532cc295cd7254";
+const STILE_CHIARO = "voyager";
+const STILE_SCURO = "dark_all";
+
+// Feed delle posizioni GTT pubblicato da BusOne.
+const FEED_URL = "https://proxy.busone.app/gtt/gtfs-rt/vehicle-positions.json";
+
+// Ogni quanti secondi aggiornare le posizioni.
+const INTERVALLO_SECONDI = 15;
+
+// Come il sito si presenta a BusOne (lo chiedono nelle loro condizioni d'uso).
+// Usa solo lettere senza accenti.
+const CLIENT = "OpenCityMap (https://matteo-beltramo.github.io/OpenCityMap/) matteo.beltramo227@gmail.com";
+const USO = "personal";
+
+/* =========================================================
+   DA QUI IN GIÙ: FUNZIONAMENTO DELLA MAPPA
+   ========================================================= */
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+const rootEl = document.documentElement;
+const isDark = () => rootEl.dataset.theme === "dark" || (rootEl.dataset.theme !== "light" && darkQuery.matches);
+const nf = n => n.toLocaleString("it-IT");
+
+/* ---------- mappa e sfondo ---------- */
+const TORINO = L.latLngBounds([45.006, 7.578], [45.140, 7.773]);
+const map = L.map("map", { zoomControl: false, minZoom: 9, maxZoom: 19, zoomSnap: 0.25 });
+map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+map.attributionControl.addAttribution('Mezzi: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> e GTT');
+L.control.scale({ imperial: false, position: "bottomleft", maxWidth: 120 }).addTo(map);
+
+let baseLayer = null;
+let usingFallback = !CARTO_KEY;
+function setBasemap() {
+  if (baseLayer) map.removeLayer(baseLayer);
+  if (usingFallback) {
+    const name = isDark() ? "World_Dark_Gray_Base" : "World_Light_Gray_Base";
+    baseLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/" + name + "/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19, maxNativeZoom: 16, attribution: "Tiles © Esri"
+    });
+  } else {
+    const style = isDark() ? STILE_SCURO : STILE_CHIARO;
+    baseLayer = L.tileLayer("https://basemaps.cartocdn.com/rastertiles/" + style + "/{z}/{x}/{y}{r}.png?key=" + CARTO_KEY, {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+    });
+    let loaded = 0, errors = 0;
+    baseLayer.on("tileload", () => { loaded++; });
+    baseLayer.on("tileerror", () => {
+      errors++;
+      if (errors >= 6 && loaded === 0 && !usingFallback) { usingFallback = true; setBasemap(); }
+    });
+  }
+  baseLayer.addTo(map);
+  baseLayer.bringToBack();
+}
+setBasemap();
+darkQuery.addEventListener("change", setBasemap);
+
+const panel = document.getElementById("panel");
+function fitTorino(animate) {
+  const narrow = window.innerWidth <= 640;
+  const navBottom = document.querySelector(".top").getBoundingClientRect().bottom;
+  const p = panel.getBoundingClientRect();
+  map.fitBounds(TORINO, {
+    paddingTopLeft: [narrow ? 16 : Math.min(p.right + 16, window.innerWidth * 0.45), navBottom + 16],
+    paddingBottomRight: [narrow ? 16 : 64, narrow ? (window.innerHeight - p.top) + 12 : 24],
+    animate: animate && !reduceMotion
+  });
+}
+fitTorino(false);
+
+function updateLabels() {
+  map.getContainer().classList.toggle("show-labels", map.getZoom() >= 14);
+}
+map.on("zoomend", updateLabels);
+updateLabels();
+
+document.getElementById("zin").onclick = () => map.zoomIn();
+document.getElementById("zout").onclick = () => map.zoomOut();
+document.getElementById("zreset").onclick = () => fitTorino(true);
+
+const toggle = document.getElementById("panel-toggle");
+toggle.addEventListener("click", () => {
+  const collapsed = panel.classList.toggle("collapsed");
+  toggle.setAttribute("aria-expanded", String(!collapsed));
+  toggle.textContent = collapsed ? "Linee" : "Nascondi";
+});
+
+/* ---------- mezzi sulla mappa ---------- */
+const vehiclesLayer = L.layerGroup().addTo(map);
+const vehicles = new Map();      // id del mezzo -> { marker, line, label, ts, anim }
+const selected = new Set();      // linee scelte nel filtro (vuoto = tutte)
+
+// "4U" -> "4", "62U" -> "62": la U finale indica le linee urbane
+const lineName = routeId => String(routeId || "?").replace(/U$/, "");
+
+function makeIcon(line) {
+  const safe = String(line).replace(/[&<>"]/g, "");
+  return L.divIcon({
+    className: "veh",
+    html: '<span class="arrow"></span><span class="dot"></span><span class="lbl">' + safe + "</span>",
+    iconSize: [0, 0],
+    popupAnchor: [0, -8]
+  });
+}
+function setBearing(v, bearing) {
+  const el = v.marker.getElement();
+  if (!el) return;
+  const arrow = el.querySelector(".arrow");
+  if (arrow) {
+    arrow.style.display = bearing == null ? "none" : "";
+    arrow.style.transform = "rotate(" + (bearing || 0) + "deg)";
+  }
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function popupText(v) {
+  const age = Math.max(0, Math.round(Date.now() / 1000 - v.ts));
+  const ageText = age < 60 ? age + " secondi fa" : Math.round(age / 60) + " minuti fa";
+  return "<strong>Linea " + esc(v.line) + "</strong>Mezzo " + esc(v.label) + "<br>Posizione di " + ageText;
+}
+function isVisible(line) {
+  return selected.size === 0 || selected.has(line);
+}
+
+// spostamento morbido dalla posizione vecchia alla nuova
+const animating = new Set();
+function animate(now) {
+  animating.forEach(v => {
+    const t = Math.min(1, (now - v.anim.start) / 1200);
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    v.marker.setLatLng([
+      v.anim.from.lat + (v.anim.to.lat - v.anim.from.lat) * e,
+      v.anim.from.lng + (v.anim.to.lng - v.anim.from.lng) * e
+    ]);
+    if (t >= 1) animating.delete(v);
+  });
+  if (animating.size) requestAnimationFrame(animate);
+}
+
+function applyFeed(feed) {
+  const seen = new Set();
+  (feed.entity || []).forEach(ent => {
+    const vp = ent.vehicle;
+    if (!vp || !vp.position) return;
+    const lat = vp.position.latitude, lng = vp.position.longitude;
+    if (typeof lat !== "number" || typeof lng !== "number") return;
+    const id = String((vp.vehicle && vp.vehicle.id) || ent.id);
+    const line = lineName(vp.trip && vp.trip.route_id);
+    const label = (vp.vehicle && vp.vehicle.label) || id;
+    const ts = vp.timestamp || (feed.header && feed.header.timestamp) || Date.now() / 1000;
+    const bearing = typeof vp.position.bearing === "number" ? vp.position.bearing : null;
+    seen.add(id);
+
+    let v = vehicles.get(id);
+    if (!v) {
+      const marker = L.marker([lat, lng], { icon: makeIcon(line), keyboard: false, riseOnHover: true });
+      v = { marker, line, label, ts, anim: null };
+      marker.bindPopup(() => popupText(v), { closeButton: true, autoPan: false });
+      marker.on("add", () => setBearing(v, v.bearing));
+      vehicles.set(id, v);
+    } else {
+      if (v.line !== line) { v.line = line; v.marker.setIcon(makeIcon(line)); }
+      const from = v.marker.getLatLng();
+      const moved = Math.abs(from.lat - lat) > 1e-6 || Math.abs(from.lng - lng) > 1e-6;
+      if (moved) {
+        if (reduceMotion || document.hidden || !map.hasLayer(v.marker)) {
+          v.marker.setLatLng([lat, lng]);
+        } else {
+          v.anim = { from, to: L.latLng(lat, lng), start: performance.now() };
+          if (!animating.size) requestAnimationFrame(animate);
+          animating.add(v);
+        }
+      }
+    }
+    v.label = label;
+    v.ts = ts;
+    v.bearing = bearing;
+    setBearing(v, bearing);
+
+    const show = isVisible(line);
+    if (show && !vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.addLayer(v.marker);
+    if (!show && vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.removeLayer(v.marker);
+  });
+
+  // i mezzi che non compaiono più nel feed escono dalla mappa
+  vehicles.forEach((v, id) => {
+    if (!seen.has(id)) {
+      vehiclesLayer.removeLayer(v.marker);
+      animating.delete(v);
+      vehicles.delete(id);
+    }
+  });
+
+  renderChips();
+  renderCount();
+}
+
+/* ---------- pannello: conteggio e filtro per linea ---------- */
+const countEl = document.getElementById("count");
+const statusEl = document.getElementById("status");
+const chipsEl = document.getElementById("chips");
+const clearBtn = document.getElementById("clear");
+
+function sortLines(a, b) {
+  const na = parseInt(a, 10), nb = parseInt(b, 10);
+  if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+  if (isNaN(na) !== isNaN(nb)) return isNaN(na) ? 1 : -1;
+  return a.localeCompare(b, "it");
+}
+function renderCount() {
+  let total = 0, shown = 0;
+  vehicles.forEach(v => { total++; if (isVisible(v.line)) shown++; });
+  if (total === 0) countEl.textContent = "Nessun mezzo in servizio in questo momento";
+  else if (selected.size === 0) countEl.textContent = nf(total) + (total === 1 ? " mezzo in servizio" : " mezzi in servizio");
+  else countEl.textContent = nf(shown) + " su " + nf(total) + " mezzi, sulle linee scelte";
+  clearBtn.hidden = selected.size === 0;
+}
+function renderChips() {
+  const counts = new Map();
+  vehicles.forEach(v => counts.set(v.line, (counts.get(v.line) || 0) + 1));
+  selected.forEach(l => { if (!counts.has(l)) counts.set(l, 0); });
+  const lines = [...counts.keys()].sort(sortLines);
+  chipsEl.textContent = "";
+  if (!lines.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Le linee compariranno quando ci saranno mezzi in servizio.";
+    chipsEl.appendChild(p);
+    return;
+  }
+  lines.forEach(line => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.setAttribute("aria-pressed", String(selected.has(line)));
+    b.append(line);
+    const s = document.createElement("small");
+    s.textContent = counts.get(line);
+    b.appendChild(s);
+    b.addEventListener("click", () => {
+      if (selected.has(line)) selected.delete(line); else selected.add(line);
+      refreshVisibility();
+    });
+    chipsEl.appendChild(b);
+  });
+}
+function refreshVisibility() {
+  vehicles.forEach(v => {
+    const show = isVisible(v.line);
+    if (show && !vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.addLayer(v.marker);
+    if (!show && vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.removeLayer(v.marker);
+  });
+  renderChips();
+  renderCount();
+}
+clearBtn.addEventListener("click", () => { selected.clear(); refreshVisibility(); });
+
+/* ---------- aggiornamento periodico dal feed ---------- */
+let useHeaders = true;
+async function fetchFeed() {
+  const options = { cache: "no-store" };
+  if (useHeaders) options.headers = { "X-BusOne-Client": CLIENT, "X-BusOne-Use": USO };
+  try {
+    const res = await fetch(FEED_URL, options);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } catch (err) {
+    // se il server non accetta le intestazioni da un browser, riprovo senza
+    if (useHeaders) { useHeaders = false; return fetchFeed(); }
+    throw err;
+  }
+}
+
+let timer = null;
+let failures = 0;
+async function tick() {
+  clearTimeout(timer);
+  if (document.hidden) return;              // scheda nascosta: non scarico nulla
+  try {
+    const feed = await fetchFeed();
+    failures = 0;
+    applyFeed(feed);
+    const ts = feed.header && feed.header.timestamp ? new Date(feed.header.timestamp * 1000) : new Date();
+    statusEl.className = "status live";
+    statusEl.textContent = "In diretta · aggiornato alle " + ts.toLocaleTimeString("it-IT");
+    timer = setTimeout(tick, INTERVALLO_SECONDI * 1000);
+  } catch (err) {
+    failures++;
+    const wait = Math.min(120, INTERVALLO_SECONDI * Math.pow(2, failures));
+    statusEl.className = "status error";
+    statusEl.textContent = "Dati non raggiungibili, nuovo tentativo tra " + wait + " s";
+    if (vehicles.size === 0) countEl.textContent = "Posizioni non disponibili";
+    timer = setTimeout(tick, wait * 1000);
+  }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+tick();
+
+window.addEventListener("resize", () => map.invalidateSize());
+</script>
+</body>
+</html>
