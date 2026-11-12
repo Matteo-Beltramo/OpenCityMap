@@ -29,9 +29,25 @@
     --focus: #1f6fd1;
     --vehicle: #0b6b7c;
     --vehicle-ink: #ffffff;
-    --vehicle-ring: #ffffff;
+    --vehicle-ring: #1d2632;
     --live: #1a9a4b;
     --error: #c0392b;
+    --metro: #c8102e;
+    --route: #e8590c;
+    --casing: #ffffff;
+    --stop-fill: #ffffff;
+    --stop-line: #1d2632;
+    /* colori GTT: giallo per i tram, blu per i bus; nelle linee scelte, blu andata e giallo ritorno */
+    --tram: #f5b800;
+    --tram-ink: #1d1d1b;
+    --bus: #0057a6;
+    --bus-ink: #ffffff;
+    --other: #7a8594;
+    --other-ink: #ffffff;
+    --andata: #0057a6;
+    --andata-ink: #ffffff;
+    --ritorno: #f5b800;
+    --ritorno-ink: #1d1d1b;
     --shadow: 0 10px 30px rgba(20, 32, 51, 0.12);
     color-scheme: light;
 
@@ -56,9 +72,24 @@
       --focus: #7fb4ff;
       --vehicle: #5fc4d6;
       --vehicle-ink: #0d1a20;
-      --vehicle-ring: #0d1a20;
+      --vehicle-ring: #ffffff;
       --live: #4cd07d;
       --error: #ff6b5e;
+      --metro: #ff5a66;
+      --route: #ff922b;
+      --casing: #12171e;
+      --stop-fill: #12171e;
+      --stop-line: #e8ecf1;
+      --tram: #ffd23f;
+      --tram-ink: #1d1d1b;
+      --bus: #4c8dff;
+      --bus-ink: #0b1726;
+      --other: #9aa5b3;
+      --other-ink: #12171e;
+      --andata: #4c8dff;
+      --andata-ink: #0b1726;
+      --ritorno: #ffd23f;
+      --ritorno-ink: #1d1d1b;
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       color-scheme: dark;
     }
@@ -79,9 +110,24 @@
     --focus: #7fb4ff;
     --vehicle: #5fc4d6;
     --vehicle-ink: #0d1a20;
-    --vehicle-ring: #0d1a20;
+    --vehicle-ring: #ffffff;
     --live: #4cd07d;
     --error: #ff6b5e;
+    --metro: #ff5a66;
+    --route: #ff922b;
+    --casing: #12171e;
+    --stop-fill: #12171e;
+    --stop-line: #e8ecf1;
+    --tram: #ffd23f;
+    --tram-ink: #1d1d1b;
+    --bus: #4c8dff;
+    --bus-ink: #0b1726;
+    --other: #9aa5b3;
+    --other-ink: #12171e;
+    --andata: #4c8dff;
+    --andata-ink: #0b1726;
+    --ritorno: #ffd23f;
+    --ritorno-ink: #1d1d1b;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     color-scheme: dark;
   }
@@ -125,11 +171,18 @@
   .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
 
   /* mezzi */
-  .veh { width: 0; height: 0; }
+  /* Ogni mezzo prende il colore da --vc (pallino) e --vi (testo dell'etichetta).
+     La classe decide quali: t-tram, t-bus, t-metro per il tipo; d-0, d-1 per andata e ritorno. */
+  .veh { width: 0; height: 0; --vc: var(--other); --vi: var(--other-ink); }
+  .veh.t-tram  { --vc: var(--tram);    --vi: var(--tram-ink); }
+  .veh.t-bus   { --vc: var(--bus);     --vi: var(--bus-ink); }
+  .veh.t-metro { --vc: var(--metro);   --vi: #ffffff; }
+  .veh.d-0     { --vc: var(--andata);  --vi: var(--andata-ink); }
+  .veh.d-1     { --vc: var(--ritorno); --vi: var(--ritorno-ink); }
   .veh .dot {
     position: absolute; left: -6px; top: -6px;
     width: 12px; height: 12px; border-radius: 50%;
-    background: var(--vehicle);
+    background: var(--vc);
     border: 2px solid var(--vehicle-ring);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
@@ -143,15 +196,15 @@
     position: absolute; left: 6px; top: -3px;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
-    border-bottom: 6px solid var(--vehicle);
+    border-bottom: 6px solid var(--vc);
   }
   .veh .lbl {
     display: none;
     position: absolute; left: 9px; top: -9px;
     padding: 1px 6px;
     font: 650 0.6875rem/1.4 var(--sans);
-    color: var(--vehicle-ink);
-    background: var(--vehicle);
+    color: var(--vi);
+    background: var(--vc);
     border: 1.5px solid var(--vehicle-ring);
     border-radius: 999px;
     white-space: nowrap;
@@ -222,7 +275,8 @@
     cursor: pointer;
   }
   .chip small { color: var(--muted); font-size: 0.6875rem; margin-left: 3px; }
-  .chip[aria-pressed="true"] { color: var(--vehicle-ink); background: var(--vehicle); border-color: var(--vehicle); }
+  .chip .chip-dot { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--c); vertical-align: 1px; }
+  .chip[aria-pressed="true"] { color: var(--surface); background: var(--ink); border-color: var(--ink); }
   .chip[aria-pressed="true"] small { color: inherit; opacity: 0.8; }
   .empty { margin: 0; color: var(--muted); }
   .note { margin: 14px 0 0; font-size: 0.75rem; color: var(--muted); }
@@ -232,6 +286,34 @@
   .controls button { width: 40px; height: 40px; font: 500 1.125rem/1 var(--sans); color: var(--ink); background: var(--btn-bg); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; box-shadow: var(--shadow); }
   .controls button:hover { background: var(--btn-hover); }
   .controls svg { display: block; margin: auto; }
+
+  /* percorsi, metro e fermate: i colori vengono dalle variabili in cima al file */
+  .metro-casing, .route-casing { stroke: var(--casing); stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .metro-line { stroke: var(--metro); stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .route-andata  { stroke: var(--andata);  stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .route-ritorno { stroke: var(--ritorno); stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  /* varianti di percorso: stesse tinte, ma sottili e tratteggiate */
+  .route-var-andata  { stroke: var(--andata);  stroke-dasharray: 6 7; stroke-linecap: butt; fill: none; }
+  .route-var-ritorno { stroke: var(--ritorno); stroke-dasharray: 6 7; stroke-linecap: butt; fill: none; }
+  .station { fill: var(--stop-fill); stroke: var(--metro); }
+  .stop { fill: var(--stop-fill); stroke: var(--stop-line); }
+  .popup-btn {
+    display: block; margin-top: 10px; padding: 7px 12px;
+    font: 650 0.8125rem/1 var(--sans);
+    color: var(--bus-ink); background: var(--bus);
+    border: 0; border-radius: 8px; cursor: pointer;
+  }
+  .static-note { margin: 10px 0 0; font-size: 0.75rem; color: var(--error); }
+
+  /* legenda: cambia da sola tra "tipi di mezzo" e "andata / ritorno" */
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; font-size: 0.8125rem; }
+  .legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { display: inline-block; flex: none; }
+  .legend .sw.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); border: 2px solid var(--vehicle-ring); }
+  .legend .sw.line { width: 24px; height: 6px; border-radius: 3px; background: var(--c); }
+  .legend .sw.dash { width: 24px; height: 0; border-top: 3px dashed var(--c); }
+  .legend .sw.stopsw { width: 11px; height: 11px; border-radius: 50%; background: var(--stop-fill); border: 2px solid var(--stop-line); }
+  .static-note:empty { display: none; }
 
   @media (max-width: 640px) {
     .brand { font-size: 1.25rem; }
@@ -266,6 +348,7 @@
       <h1 id="title">GTT in tempo reale</h1>
       <p class="count" id="count">Caricamento…</p>
       <p class="status" id="status">Connessione in corso</p>
+      <div class="legend" id="legend" aria-label="Legenda"></div>
     </div>
     <button type="button" class="panel-toggle" id="panel-toggle" aria-expanded="true" aria-controls="panel-body">Nascondi</button>
   </div>
@@ -275,7 +358,8 @@
       <button type="button" id="clear" hidden>Mostra tutte</button>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Filtra per linea"></div>
-    <p class="note">Tocca una o più linee per vedere solo quelle; tocca un mezzo per i dettagli. Dati: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> (https://busone.app) e GTT, open data.</p>
+    <p class="note">La metro è sempre visibile. Tocca una o più linee per vederne mezzi, percorso e fermate; tocca un mezzo o una fermata per i dettagli. Dati: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> (https://busone.app) e GTT, open data.</p>
+    <p class="static-note" id="static-note"></p>
   </div>
 </section>
 
@@ -304,6 +388,11 @@ const FEED_URL = "https://proxy.busone.app/gtt/gtfs-rt/vehicle-positions.json";
 // Ogni quanti secondi aggiornare le posizioni.
 const INTERVALLO_SECONDI = 15;
 
+// File preparati con il notebook prepara_linee_gtt.
+// Devono stare nella stessa cartella di questa pagina: se li rinomini, cambia il nome anche qui.
+const FILE_LINEE = "lineeGTT.geojson";
+const FILE_FERMATE = "fermateGTT.geojson";
+
 // Come il sito si presenta a BusOne (lo chiedono nelle loro condizioni d'uso).
 // Usa solo lettere senza accenti.
 const CLIENT = "OpenCityMap (https://matteo-beltramo.github.io/OpenCityMap/) matteo.beltramo227@gmail.com";
@@ -318,12 +407,23 @@ const rootEl = document.documentElement;
 const isDark = () => rootEl.dataset.theme === "dark" || (rootEl.dataset.theme !== "light" && darkQuery.matches);
 const nf = n => n.toLocaleString("it-IT");
 
+// esc: rende sicuro un testo prima di inserirlo in HTML (evita che caratteri come < o & rompano la pagina).
+// Riuso: usalo ogni volta che metti in una pagina un testo che arriva da un file o da un feed.
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
 /* ---------- mappa e sfondo ---------- */
 const TORINO = L.latLngBounds([45.006, 7.578], [45.140, 7.773]);
 const map = L.map("map", { zoomControl: false, minZoom: 9, maxZoom: 19, zoomSnap: 0.25 });
 map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
-map.attributionControl.addAttribution('Mezzi: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> e GTT');
+map.attributionControl.addAttribution('Mezzi, percorsi e fermate: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> e GTT');
 L.control.scale({ imperial: false, position: "bottomleft", maxWidth: 120 }).addTo(map);
+
+// I "pane" sono strati sovrapposti della mappa: decidono cosa sta sopra a cosa.
+// Più alto è lo zIndex, più l'elemento sta in alto. I mezzi stanno nel pane dei marker (600), sopra a tutto.
+// Riuso: crea un pane ogni volta che vuoi essere sicuro che un livello resti sopra o sotto un altro.
+map.createPane("metro").style.zIndex = 410;     // linea della metro, sempre visibile
+map.createPane("percorsi").style.zIndex = 420;  // percorsi delle linee selezionate
+map.createPane("fermate").style.zIndex = 430;   // fermate delle linee selezionate e stazioni della metro
 
 let baseLayer = null;
 let usingFallback = !CARTO_KEY;
@@ -353,18 +453,20 @@ function setBasemap() {
 setBasemap();
 darkQuery.addEventListener("change", setBasemap);
 
+// Inquadra un'area lasciando spazio al pannello e alla barra in alto
 const panel = document.getElementById("panel");
-function fitTorino(animate) {
+function fitArea(bounds, animate) {
   const narrow = window.innerWidth <= 640;
   const navBottom = document.querySelector(".top").getBoundingClientRect().bottom;
   const p = panel.getBoundingClientRect();
-  map.fitBounds(TORINO, {
+  map.fitBounds(bounds, {
     paddingTopLeft: [narrow ? 16 : Math.min(p.right + 16, window.innerWidth * 0.45), navBottom + 16],
     paddingBottomRight: [narrow ? 16 : 64, narrow ? (window.innerHeight - p.top) + 12 : 24],
-    animate: animate && !reduceMotion
+    animate: animate && !reduceMotion,
+    maxZoom: 15
   });
 }
-fitTorino(false);
+fitArea(TORINO, false);
 
 function updateLabels() {
   map.getContainer().classList.toggle("show-labels", map.getZoom() >= 14);
@@ -374,7 +476,7 @@ updateLabels();
 
 document.getElementById("zin").onclick = () => map.zoomIn();
 document.getElementById("zout").onclick = () => map.zoomOut();
-document.getElementById("zreset").onclick = () => fitTorino(true);
+document.getElementById("zreset").onclick = () => fitArea(TORINO, true);
 
 const toggle = document.getElementById("panel-toggle");
 toggle.addEventListener("click", () => {
@@ -383,19 +485,162 @@ toggle.addEventListener("click", () => {
   toggle.textContent = collapsed ? "Linee" : "Nascondi";
 });
 
+/* ---------- percorsi e fermate (dai file preparati con il notebook) ---------- */
+// routeInfo: per ogni codice di linea (route_id, es. "4U") tengo numero, nome, tipo e i suoi percorsi.
+const routeInfo = new Map();
+let fermate = [];                         // elenco delle fermate, con le linee già divise
+let servita = () => false;                // funzione definita quando arrivano le fermate
+const metroNames = new Set();             // numeri delle linee della metro (tipo 1)
+const metroIds = new Set();               // codici delle linee della metro (es. "METRO1U")
+
+// Un percorso è "principale" se il file lo dice; i file preparati con la versione
+// precedente del notebook non hanno questa colonna, e allora li considero tutti principali.
+const isPrincipale = feat => feat.properties.principale !== false && feat.properties.principale !== "False";
+
+const metroLayer = L.layerGroup().addTo(map);          // la metro: sempre visibile
+const stationsLayer = L.layerGroup().addTo(map);       // le stazioni della metro: sempre visibili
+const routeLayer = L.featureGroup().addTo(map);        // percorsi delle linee selezionate
+const stopsLayer = L.layerGroup().addTo(map);          // fermate delle linee selezionate
+
+// Numero di linea da mostrare: quello del GTFS se c'è, altrimenti il codice senza la U finale
+const lineName = routeId => String(routeId || "?").replace(/U$/, "");
+const displayName = routeId => (routeInfo.get(routeId) || {}).linea || lineName(routeId);
+
+const TIPI = { "0": "Tram", "1": "Metro", "2": "Treno", "3": "Bus", "7": "Funicolare", "11": "Filobus" };
+
+// Da tipo di mezzo (route_type del GTFS) a classe CSS, cioè a colore: 0 tram, 1 metro, 3 bus.
+// Riuso: per dare un colore a un'altra categoria aggiungi una voce qui e una regola .veh.t-nome nello stile.
+const CLASSE_TIPO = { "0": "tram", "1": "metro", "3": "bus" };
+
+function stopPopup(f) {
+  const nome = esc(f.nome || "Fermata");
+  const codice = f.codice ? " · fermata " + esc(f.codice) : "";
+  return "<strong>" + nome + "</strong>Linee: " + esc(f.linee.join(", ")) + codice;
+}
+
+// fetch scarica un file; .json() lo trasforma in un oggetto JavaScript.
+// Promise.all aspetta che finiscano entrambi i download, che partono insieme.
+// Riuso: lo stesso schema carica qualsiasi GeoJSON nella pagina (confini, punti, percorsi).
+async function loadStatic() {
+  const getJson = url => fetch(url).then(r => {
+    if (!r.ok) throw new Error(url + ": " + r.status);
+    return r.json();
+  });
+  try {
+    const [linee, ferm] = await Promise.all([getJson(FILE_LINEE), getJson(FILE_FERMATE)]);
+
+    // 1) Percorsi: raggruppo i tracciati per linea (andata e ritorno insieme)
+    linee.features.forEach(feat => {
+      const p = feat.properties;
+      if (!routeInfo.has(p.route_id)) {
+        routeInfo.set(p.route_id, { linea: p.linea || lineName(p.route_id), nome: p.nome || "", tipo: String(p.tipo), features: [] });
+      }
+      routeInfo.get(p.route_id).features.push(feat);
+    });
+
+    // 2) La metro (tipo 1) la disegno subito, sempre visibile, con un bordo chiaro sotto ("casing")
+    routeInfo.forEach((info, routeId) => {
+      if (info.tipo !== "1") return;
+      metroNames.add(info.linea);
+      metroIds.add(routeId);
+      info.features.filter(isPrincipale).forEach(feat => {
+        L.geoJSON(feat, { pane: "metro", interactive: false, style: { className: "metro-casing", weight: 10, opacity: 1 } }).addTo(metroLayer);
+        L.geoJSON(feat, { pane: "metro", interactive: false, style: { className: "metro-line", weight: 5, opacity: 1 } }).addTo(metroLayer);
+      });
+    });
+
+    // 3) Fermate: divido la stringa "4, 15, 55" in un elenco ["4", "15", "55"]
+    fermate = ferm.features.map(feat => ({
+      latlng: [feat.geometry.coordinates[1], feat.geometry.coordinates[0]],   // GeoJSON è [lon, lat], Leaflet vuole [lat, lon]
+      nome: feat.properties.nome,
+      codice: feat.properties.codice,
+      linee: String(feat.properties.linee || "").split(", ").filter(Boolean),
+      // codici delle linee (route_id): ci sono se il file viene dalla versione nuova del notebook
+      routeIds: String(feat.properties.route_ids || "").split(", ").filter(Boolean)
+    }));
+
+    // Una fermata è servita da una linea? Uso i codici se ci sono, altrimenti i numeri.
+    servita = (f, ids, nomi) => f.routeIds.length
+      ? f.routeIds.some(id => ids.has(id))
+      : f.linee.some(l => nomi.has(l));
+
+    // 4) Le stazioni della metro: fermate dove passa almeno una linea della metro
+    fermate.forEach(f => {
+      if (servita(f, metroIds, metroNames)) {
+        L.circleMarker(f.latlng, { pane: "fermate", className: "station", radius: 6, weight: 3, opacity: 1, fillOpacity: 1 })
+          .bindPopup(() => stopPopup(f), { autoPan: false })
+          .addTo(stationsLayer);
+      }
+    });
+
+    // 5) Aggiorno colori ed etichette dei mezzi, pulsanti delle linee, legenda ed evidenziazione
+    vehicles.forEach(updateIcon);
+    renderChips();
+    renderLegend();
+    updateHighlight(false);
+  } catch (err) {
+    console.warn("Percorsi e fermate non caricati:", err);
+    document.getElementById("static-note").textContent =
+      "Percorsi e fermate non disponibili: controlla che i file " + FILE_LINEE + " e " + FILE_FERMATE + " siano nella cartella della pagina.";
+  }
+}
+
+// Evidenzia percorso e fermate delle linee selezionate.
+// zoom = true quando l'ha chiesto l'utente: allora la mappa inquadra le linee scelte.
+function updateHighlight(zoom) {
+  routeLayer.clearLayers();
+  stopsLayer.clearLayers();
+  if (selected.size === 0) return;
+
+  const nomiScelti = new Set();
+  const tracciati = [];
+  selected.forEach(routeId => {
+    const info = routeInfo.get(routeId);
+    if (!info) return;
+    nomiScelti.add(info.linea);
+    if (info.tipo === "1") return;                       // la metro è già disegnata
+    tracciati.push(...info.features);
+  });
+
+  // Disegno a strati, dal basso verso l'alto, perché andata e ritorno spesso passano sulla stessa strada:
+  // 1) un bordo chiaro sotto tutto, 2) le varianti sottili e tratteggiate,
+  // 3) l'andata principale larga, 4) il ritorno principale più stretto sopra.
+  // Dove andata e ritorno coincidono si vede una linea bicolore; dove si separano, ognuno col suo colore.
+  // direzione "0" = andata, "1" = ritorno (è la colonna direction_id del GTFS).
+  const disegna = (feats, className, weight) => feats.forEach(feat =>
+    L.geoJSON(feat, { pane: "percorsi", interactive: false, style: { className, weight, opacity: 1 } }).addTo(routeLayer));
+  const ritorno = f => String(f.properties.direzione) === "1";
+  const principali = tracciati.filter(isPrincipale);
+  const varianti = tracciati.filter(f => !isPrincipale(f));
+  disegna(varianti, "route-casing", 6);
+  disegna(principali, "route-casing", 11);
+  disegna(varianti.filter(f => !ritorno(f)), "route-var-andata", 3);
+  disegna(varianti.filter(ritorno), "route-var-ritorno", 3);
+  disegna(principali.filter(f => !ritorno(f)), "route-andata", 7);
+  disegna(principali.filter(ritorno), "route-ritorno", 3.5);
+
+  // fermate delle linee scelte (escluse le stazioni della metro, già visibili)
+  fermate.forEach(f => {
+    if (servita(f, metroIds, metroNames)) return;
+    if (servita(f, selected, nomiScelti)) {
+      L.circleMarker(f.latlng, { pane: "fermate", className: "stop", radius: 4, weight: 2, opacity: 1, fillOpacity: 1 })
+        .bindPopup(() => stopPopup(f), { autoPan: false })
+        .addTo(stopsLayer);
+    }
+  });
+
+  if (zoom && routeLayer.getLayers().length) fitArea(routeLayer.getBounds(), true);
+}
+
 /* ---------- mezzi sulla mappa ---------- */
 const vehiclesLayer = L.layerGroup().addTo(map);
-const vehicles = new Map();      // id del mezzo -> { marker, line, label, ts, anim }
-const selected = new Set();      // linee scelte nel filtro (vuoto = tutte)
+const vehicles = new Map();      // id del mezzo -> { marker, routeId, label, ts, bearing }
+const selected = new Set();      // codici delle linee scelte nel filtro (vuoto = tutte)
 
-// "4U" -> "4", "62U" -> "62": la U finale indica le linee urbane
-const lineName = routeId => String(routeId || "?").replace(/U$/, "");
-
-function makeIcon(line) {
-  const safe = String(line).replace(/[&<>"]/g, "");
+function makeIcon(line, cls) {
   return L.divIcon({
-    className: "veh",
-    html: '<span class="arrow"></span><span class="dot"></span><span class="lbl">' + safe + "</span>",
+    className: "veh " + cls,
+    html: '<span class="arrow"></span><span class="dot"></span><span class="lbl">' + esc(line) + "</span>",
     iconSize: [0, 0],
     popupAnchor: [0, -8]
   });
@@ -409,14 +654,54 @@ function setBearing(v, bearing) {
     arrow.style.transform = "rotate(" + (bearing || 0) + "deg)";
   }
 }
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Classe (cioè colore) di un mezzo: se la sua linea è selezionata conta la direzione,
+// altrimenti il tipo di mezzo.
+function vehicleClass(v) {
+  if (selected.size && selected.has(v.routeId)) {
+    return v.dir === 0 ? "d-0" : v.dir === 1 ? "d-1" : "d-x";
+  }
+  const info = routeInfo.get(v.routeId);
+  return "t-" + ((info && CLASSE_TIPO[info.tipo]) || "other");
+}
+
+// Ricrea l'icona solo se colore o numero sono cambiati (ricrearla a ogni aggiornamento sarebbe lento)
+function updateIcon(v) {
+  const label = displayName(v.routeId);
+  const cls = vehicleClass(v);
+  const key = cls + "|" + label;
+  if (v.iconKey === key) return;
+  v.iconKey = key;
+  v.marker.setIcon(makeIcon(label, cls));
+  setBearing(v, v.bearing);
+}
+
 function popupText(v) {
   const age = Math.max(0, Math.round(Date.now() / 1000 - v.ts));
   const ageText = age < 60 ? age + " secondi fa" : Math.round(age / 60) + " minuti fa";
-  return "<strong>Linea " + esc(v.line) + "</strong>Mezzo " + esc(v.label) + "<br>Posizione di " + ageText;
+  const info = routeInfo.get(v.routeId);
+  const tipo = info && TIPI[info.tipo] ? TIPI[info.tipo] + " " : "Linea ";
+  const button = routeInfo.has(v.routeId)
+    ? '<button type="button" class="popup-btn" data-route="' + esc(v.routeId) + '">Mostra percorso e fermate</button>'
+    : "";
+  const verso = v.dir === 0 ? " · andata" : v.dir === 1 ? " · ritorno" : "";
+  return "<strong>" + tipo + esc(displayName(v.routeId)) + "</strong>Mezzo " + esc(v.label) + verso +
+         "<br>Posizione di " + ageText + button;
 }
-function isVisible(line) {
-  return selected.size === 0 || selected.has(line);
+
+// Il pulsante dentro il fumetto di un mezzo seleziona la sua linea
+map.on("popupopen", e => {
+  const btn = e.popup.getElement().querySelector("[data-route]");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    selected.clear();
+    selected.add(btn.dataset.route);
+    map.closePopup();
+    refreshVisibility(true);
+  });
+});
+
+function isVisible(routeId) {
+  return selected.size === 0 || selected.has(routeId);
 }
 
 // spostamento morbido dalla posizione vecchia alla nuova
@@ -442,21 +727,23 @@ function applyFeed(feed) {
     const lat = vp.position.latitude, lng = vp.position.longitude;
     if (typeof lat !== "number" || typeof lng !== "number") return;
     const id = String((vp.vehicle && vp.vehicle.id) || ent.id);
-    const line = lineName(vp.trip && vp.trip.route_id);
+    const routeId = String((vp.trip && vp.trip.route_id) || "?");
     const label = (vp.vehicle && vp.vehicle.label) || id;
     const ts = vp.timestamp || (feed.header && feed.header.timestamp) || Date.now() / 1000;
     const bearing = typeof vp.position.bearing === "number" ? vp.position.bearing : null;
+    // direction_id: 0 andata, 1 ritorno; alcuni mezzi non lo indicano (null)
+    const dir = vp.trip && typeof vp.trip.direction_id === "number" ? vp.trip.direction_id : null;
     seen.add(id);
 
     let v = vehicles.get(id);
     if (!v) {
-      const marker = L.marker([lat, lng], { icon: makeIcon(line), keyboard: false, riseOnHover: true });
-      v = { marker, line, label, ts, anim: null };
+      const marker = L.marker([lat, lng], { icon: makeIcon(displayName(routeId), "t-other"), keyboard: false, riseOnHover: true });
+      v = { marker, routeId, label, ts, anim: null };
       marker.bindPopup(() => popupText(v), { closeButton: true, autoPan: false });
       marker.on("add", () => setBearing(v, v.bearing));
       vehicles.set(id, v);
     } else {
-      if (v.line !== line) { v.line = line; v.marker.setIcon(makeIcon(line)); }
+      v.routeId = routeId;
       const from = v.marker.getLatLng();
       const moved = Math.abs(from.lat - lat) > 1e-6 || Math.abs(from.lng - lng) > 1e-6;
       if (moved) {
@@ -472,9 +759,11 @@ function applyFeed(feed) {
     v.label = label;
     v.ts = ts;
     v.bearing = bearing;
+    v.dir = dir;
+    updateIcon(v);
     setBearing(v, bearing);
 
-    const show = isVisible(line);
+    const show = isVisible(routeId);
     if (show && !vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.addLayer(v.marker);
     if (!show && vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.removeLayer(v.marker);
   });
@@ -490,6 +779,7 @@ function applyFeed(feed) {
 
   renderChips();
   renderCount();
+  renderLegend();
 }
 
 /* ---------- pannello: conteggio e filtro per linea ---------- */
@@ -498,6 +788,7 @@ const statusEl = document.getElementById("status");
 const chipsEl = document.getElementById("chips");
 const clearBtn = document.getElementById("clear");
 
+// Ordine "naturale": 2, 4, 10, 55 e non 10, 2, 4, 55
 function sortLines(a, b) {
   const na = parseInt(a, 10), nb = parseInt(b, 10);
   if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
@@ -506,51 +797,94 @@ function sortLines(a, b) {
 }
 function renderCount() {
   let total = 0, shown = 0;
-  vehicles.forEach(v => { total++; if (isVisible(v.line)) shown++; });
+  vehicles.forEach(v => { total++; if (isVisible(v.routeId)) shown++; });
   if (total === 0) countEl.textContent = "Nessun mezzo in servizio in questo momento";
   else if (selected.size === 0) countEl.textContent = nf(total) + (total === 1 ? " mezzo in servizio" : " mezzi in servizio");
   else countEl.textContent = nf(shown) + " su " + nf(total) + " mezzi, sulle linee scelte";
   clearBtn.hidden = selected.size === 0;
 }
 function renderChips() {
+  // conto i mezzi per linea (per codice route_id)
   const counts = new Map();
-  vehicles.forEach(v => counts.set(v.line, (counts.get(v.line) || 0) + 1));
-  selected.forEach(l => { if (!counts.has(l)) counts.set(l, 0); });
-  const lines = [...counts.keys()].sort(sortLines);
+  vehicles.forEach(v => counts.set(v.routeId, (counts.get(v.routeId) || 0) + 1));
+  selected.forEach(id => { if (!counts.has(id)) counts.set(id, 0); });
+  const ids = [...counts.keys()].sort((a, b) => sortLines(displayName(a), displayName(b)));
   chipsEl.textContent = "";
-  if (!lines.length) {
+  if (!ids.length) {
     const p = document.createElement("p");
     p.className = "empty";
     p.textContent = "Le linee compariranno quando ci saranno mezzi in servizio.";
     chipsEl.appendChild(p);
     return;
   }
-  lines.forEach(line => {
+  ids.forEach(routeId => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
-    b.setAttribute("aria-pressed", String(selected.has(line)));
-    b.append(line);
+    b.setAttribute("aria-pressed", String(selected.has(routeId)));
+    const info = routeInfo.get(routeId);
+    const dot = document.createElement("span");
+    dot.className = "chip-dot";
+    dot.style.setProperty("--c", "var(--" + ((info && CLASSE_TIPO[info.tipo]) || "other") + ")");
+    b.append(dot, displayName(routeId));
     const s = document.createElement("small");
-    s.textContent = counts.get(line);
+    s.textContent = counts.get(routeId);
     b.appendChild(s);
     b.addEventListener("click", () => {
-      if (selected.has(line)) selected.delete(line); else selected.add(line);
-      refreshVisibility();
+      if (selected.has(routeId)) selected.delete(routeId); else selected.add(routeId);
+      refreshVisibility(true);
     });
     chipsEl.appendChild(b);
   });
 }
-function refreshVisibility() {
+function refreshVisibility(zoom) {
+  vehicles.forEach(updateIcon);
   vehicles.forEach(v => {
-    const show = isVisible(v.line);
+    const show = isVisible(v.routeId);
     if (show && !vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.addLayer(v.marker);
     if (!show && vehiclesLayer.hasLayer(v.marker)) vehiclesLayer.removeLayer(v.marker);
   });
   renderChips();
   renderCount();
+  renderLegend();
+  updateHighlight(zoom);
 }
-clearBtn.addEventListener("click", () => { selected.clear(); refreshVisibility(); });
+
+// Legenda: senza linee scelte spiega i tipi di mezzo, con linee scelte spiega andata e ritorno.
+// Ogni voce è [forma, colore, testo]; forma = "dot" (pallino), "line" (linea) o "stopsw" (fermata).
+const legendEl = document.getElementById("legend");
+function renderLegend() {
+  let items;
+  if (selected.size === 0) {
+    items = [["dot", "var(--tram)", "Tram"], ["dot", "var(--bus)", "Bus"], ["line", "var(--metro)", "Metro"]];
+    let altri = false;
+    vehicles.forEach(v => { if (v.iconKey && v.iconKey.startsWith("t-other")) altri = true; });
+    if (altri && routeInfo.size) items.push(["dot", "var(--other)", "Altro"]);
+  } else {
+    items = [["line", "var(--andata)", "Andata"], ["line", "var(--ritorno)", "Ritorno"]];
+    let conVarianti = false;
+    selected.forEach(id => {
+      const info = routeInfo.get(id);
+      if (info && info.features.some(f => !isPrincipale(f))) conVarianti = true;
+    });
+    if (conVarianti) items.push(["dash", "var(--muted)", "Varianti"]);
+    items.push(["stopsw", "", "Fermate"]);
+    let senza = false;
+    vehicles.forEach(v => { if (selected.has(v.routeId) && v.dir == null) senza = true; });
+    if (senza) items.push(["dot", "var(--other)", "Direzione non indicata"]);
+  }
+  legendEl.textContent = "";
+  items.forEach(([forma, colore, testo]) => {
+    const span = document.createElement("span");
+    span.className = "lg";
+    const sw = document.createElement("i");
+    sw.className = "sw " + forma;
+    if (colore) sw.style.setProperty("--c", colore);
+    span.append(sw, testo);
+    legendEl.appendChild(span);
+  });
+}
+clearBtn.addEventListener("click", () => { selected.clear(); refreshVisibility(false); });
 
 /* ---------- aggiornamento periodico dal feed ---------- */
 let useHeaders = true;
@@ -591,7 +925,10 @@ async function tick() {
   }
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
-tick();
+
+renderLegend(); // legenda iniziale
+loadStatic();   // percorsi e fermate: una volta sola
+tick();         // posizioni: ogni INTERVALLO_SECONDI
 
 window.addEventListener("resize", () => map.invalidateSize());
 </script>
