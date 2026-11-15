@@ -37,6 +37,8 @@
     --casing: #ffffff;
     --stop-fill: #ffffff;
     --stop-line: #1d2632;
+    --stop-sq: #111418;          /* quadratino delle fermate */
+    --stop-sq-ring: #ffffff;     /* bordo chiaro che lo stacca dalla mappa */
     /* colori GTT: giallo per i tram, blu per i bus; nelle linee scelte, blu andata e giallo ritorno */
     --tram: #f5b800;
     --tram-ink: #1d1d1b;
@@ -263,6 +265,17 @@
   .lines-head h2 { margin: 0; font-size: 0.875rem; font-weight: 650; }
   .lines-head button { padding: 0; font: inherit; font-size: 0.8125rem; color: var(--accent); background: none; border: 0; cursor: pointer; }
   .lines-head button[hidden] { display: none; }
+  .search { position: relative; display: block; margin: 0 0 8px; }
+  .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .search input {
+    width: 100%; padding: 7px 10px 7px 32px;
+    font: 400 0.875rem/1.3 var(--sans); color: var(--ink);
+    background: var(--btn-bg); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .search input::placeholder { font-style: italic; color: var(--muted); opacity: 1; }   /* "Cerca linea" in corsivo grigio */
+  .search input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  /* sul telefono, sotto i 16px il browser ingrandisce la pagina quando tocchi la casella */
+  @media (max-width: 640px) { .search input { font-size: 16px; } }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 168px; overflow: auto; }
   .chip {
     padding: 4px 9px;
@@ -295,8 +308,22 @@
   /* varianti di percorso: stesse tinte, ma sottili e tratteggiate */
   .route-var-andata  { stroke: var(--andata);  stroke-dasharray: 6 7; stroke-linecap: butt; fill: none; }
   .route-var-ritorno { stroke: var(--ritorno); stroke-dasharray: 6 7; stroke-linecap: butt; fill: none; }
-  .station { fill: var(--stop-fill); stroke: var(--metro); }
-  .stop { fill: var(--stop-fill); stroke: var(--stop-line); }
+  /* Fermate: quadratini neri (si distinguono dai mezzi, che sono tondi).
+     Il ::after è un'area invisibile più grande, per toccarle facilmente dal telefono. */
+  .stop-sq { width: 0; height: 0; }
+  .stop-sq i {
+    position: absolute; left: -4px; top: -4px; width: 8px; height: 8px;
+    background: var(--stop-sq); box-shadow: 0 0 0 1.5px var(--stop-sq-ring); border-radius: 1px;
+  }
+  .stop-sq i::after { content: ""; position: absolute; inset: -7px; }
+  /* Stazioni della metro: quadrato rosso con la M bianca */
+  .metro-st { width: 0; height: 0; }
+  .metro-st i {
+    position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; border-radius: 3px;
+    background: var(--metro); box-shadow: 0 0 0 1.5px #ffffff;
+    color: #ffffff; font: 700 9.5px/14px var(--sans); font-style: normal; text-align: center;
+  }
+  .metro-st i::after { content: ""; position: absolute; inset: -6px; }
   .popup-btn {
     display: block; margin-top: 10px; padding: 7px 12px;
     font: 650 0.8125rem/1 var(--sans);
@@ -312,8 +339,27 @@
   .legend .sw.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); border: 2px solid var(--vehicle-ring); }
   .legend .sw.line { width: 24px; height: 6px; border-radius: 3px; background: var(--c); }
   .legend .sw.dash { width: 24px; height: 0; border-top: 3px dashed var(--c); }
-  .legend .sw.stopsw { width: 11px; height: 11px; border-radius: 50%; background: var(--stop-fill); border: 2px solid var(--stop-line); }
+  .legend .sw.stopsw { width: 8px; height: 8px; border-radius: 1px; background: var(--stop-sq); }
+  .legend .sw.msw { width: 14px; height: 14px; border-radius: 3px; background: var(--metro); color: #ffffff; font: 700 9.5px/14px var(--sans); font-style: normal; text-align: center; }
+  .legend .sw.msw::before { content: "M"; }
   .static-note:empty { display: none; }
+
+  /* arrivi nel fumetto delle fermate */
+  .arr-head { margin: 10px 0 2px; font-size: 0.8125rem; font-weight: 650; }
+  .arr { margin: 0; padding: 0; list-style: none; min-width: 210px; }
+  .arr li { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); }
+  .arr .ln {
+    --vc: var(--other); --vi: var(--other-ink);
+    min-width: 34px; padding: 1px 7px; border-radius: 999px; text-align: center;
+    font-size: 0.75rem; font-weight: 650; color: var(--vi); background: var(--vc);
+  }
+  .arr .ln.t-tram  { --vc: var(--tram);  --vi: var(--tram-ink); }
+  .arr .ln.t-bus   { --vc: var(--bus);   --vi: var(--bus-ink); }
+  .arr .ln.t-metro { --vc: var(--metro); --vi: #ffffff; }
+  .arr .dest { font-weight: 600; }
+  .arr .tra { margin-left: auto; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .arr .late { color: var(--error); font-size: 0.75rem; white-space: nowrap; }
+  .arr-note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); }
 
   @media (max-width: 640px) {
     .brand { font-size: 1.25rem; }
@@ -357,8 +403,13 @@
       <h2>Linee in servizio</h2>
       <button type="button" id="clear" hidden>Mostra tutte</button>
     </div>
+    <!-- Barra di ricerca: filtra i pulsanti delle linee mentre scrivi -->
+    <label class="search">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+      <input type="search" id="search" placeholder="Cerca linea" autocomplete="off" aria-label="Cerca linea">
+    </label>
     <div class="chips" id="chips" role="group" aria-label="Filtra per linea"></div>
-    <p class="note">La metro è sempre visibile. Tocca una o più linee per vederne mezzi, percorso e fermate; tocca un mezzo o una fermata per i dettagli. Dati: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> (https://busone.app) e GTT, open data.</p>
+    <p class="note">La metro è sempre visibile. Tocca una o più linee per vederne mezzi, percorso e fermate; tocca un mezzo per i dettagli, una fermata per i prossimi passaggi. Dati: <a href="https://busone.app" target="_blank" rel="noopener">BusOne</a> (https://busone.app) e GTT, open data.</p>
     <p class="static-note" id="static-note"></p>
   </div>
 </section>
@@ -372,6 +423,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Plugin che sposta le linee di qualche pixel di lato: serve ad affiancare andata e ritorno -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet-polylineoffset@1.1.1"></script>
 <script>
 /* =========================================================
    IMPOSTAZIONI MODIFICABILI
@@ -392,6 +445,20 @@ const INTERVALLO_SECONDI = 15;
 // Devono stare nella stessa cartella di questa pagina: se li rinomini, cambia il nome anche qui.
 const FILE_LINEE = "lineeGTT.geojson";
 const FILE_FERMATE = "fermateGTT.geojson";
+
+// Orari programmati della metro (creati dalla sezione 9 del notebook).
+// Servono perché GTT non pubblica dati in tempo reale per la metro.
+const FILE_ORARI_METRO = "orari_metro.json";
+
+// Previsioni di arrivo in tempo reale per bus e tram (feed TripUpdates di BusOne).
+// La pagina lo scarica solo quando apri una fermata.
+const TU_URL = "https://proxy.busone.app/gtt/gtfs-rt/trip-updates.json";
+
+// Ogni quanti secondi aggiornare gli arrivi mentre il fumetto di una fermata è aperto.
+const AGGIORNA_ARRIVI_SECONDI = 30;
+
+// Spessore in pixel delle linee di andata e ritorno quando selezioni una linea.
+const SPESSORE_LINEA = 4;
 
 // Come il sito si presenta a BusOne (lo chiedono nelle loro condizioni d'uso).
 // Usa solo lettere senza accenti.
@@ -512,10 +579,197 @@ const TIPI = { "0": "Tram", "1": "Metro", "2": "Treno", "3": "Bus", "7": "Funico
 // Riuso: per dare un colore a un'altra categoria aggiungi una voce qui e una regola .veh.t-nome nello stile.
 const CLASSE_TIPO = { "0": "tram", "1": "metro", "3": "bus" };
 
-function stopPopup(f) {
-  const nome = esc(f.nome || "Fermata");
-  const codice = f.codice ? " · fermata " + esc(f.codice) : "";
-  return "<strong>" + nome + "</strong>Linee: " + esc(f.linee.join(", ")) + codice;
+// Nomi delle fermate più leggibili: "Fermata 6162 - SAVONA N.2" diventa "Savona N.2".
+// Le parole brevi (di, della, e...) restano minuscole, i numeri romani maiuscoli,
+// e le parole con un numero (es. "SP11") tutte maiuscole.
+// Riuso: funziona per qualsiasi testo scritto tutto in maiuscolo.
+const MINUSCOLE = new Set(["di", "da", "del", "della", "dello", "dei", "degli", "delle", "e", "a", "al", "alla", "allo", "ai", "agli", "alle", "in", "con", "per", "su", "sul", "sulla"]);
+const ROMANI = /^(ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|xvii|xviii|xix|xx|xxi|xxii|xxiii|xxiv|xxv)$/;
+function nomeBello(nome) {
+  const pulito = String(nome || "").replace(/^Fermata\s+\d+\s*-\s*/i, "").trim();
+  return pulito.toLowerCase().split(/\s+/).map((parola, i) => {
+    if (i > 0 && MINUSCOLE.has(parola)) return parola;
+    if (ROMANI.test(parola) || /\d/.test(parola)) return parola.toUpperCase();
+    // maiuscola all'inizio e dopo apostrofo, trattino, parentesi o barra: "d'azeglio" -> "D'Azeglio"
+    return parola.replace(/(^|['’\-(\/])(\p{L})/gu, (tutto, prima, lettera) => prima + lettera.toUpperCase());
+  }).join(" ");
+}
+
+// Per le stazioni della metro tolgo anche "Metro" davanti: "METRO BENGASI" diventa "Bengasi"
+const nomeStazione = nome => nomeBello(nome).replace(/^Metro\s+/i, "");
+
+// Intestazione del fumetto di una fermata: il nome in grande, sotto codice e linee (o "Metro M1")
+function stopHeader(f) {
+  const isMetro = servita(f, metroIds, metroNames);
+  const titolo = esc((isMetro ? nomeStazione(f.nome) : nomeBello(f.nome)) || "Fermata");
+  // numero della fermata: il codice del GTFS, oppure quello scritto nel nome ("Fermata 6162 - ...")
+  const dalNome = String(f.nome || "").match(/^Fermata\s+(\d+)/i);
+  const numero = f.codice || (dalNome ? dalNome[1] : "");
+  const sotto = isMetro
+    ? "Metro " + esc([...metroNames].join(", "))
+    : (numero ? "Fermata " + esc(numero) + " · " : "") + "Linee: " + esc(f.linee.join(", "));
+  return "<strong>" + titolo + "</strong>" + sotto;
+}
+
+/* ---------- arrivi alle fermate ---------- */
+
+// Ora e data di Torino, qualunque sia il fuso del computer di chi guarda.
+// Intl.DateTimeFormat con timeZone "Europe/Rome" restituisce le parti della data (anno, mese, ora...).
+// Riuso: cambia timeZone per un'altra città (es. "Europe/Madrid").
+function oraTorino() {
+  const parti = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date());
+  const v = tipo => parti.find(p => p.type === tipo).value;
+  return { y: +v("year"), m: +v("month"), d: +v("day"), minuti: +v("hour") * 60 + +v("minute") };
+}
+// Data spostata di "delta" giorni, nel formato del GTFS: "20261115"
+function dataGTFS(y, m, d, delta) {
+  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10).replace(/-/g, "");
+}
+// Da un elenco di minuti mancanti al testo: [0, 8, 15] diventa "ora · 8 · 15 min"
+function tempi(minuti) {
+  const testo = minuti.map(m => m <= 0 ? "ora" : String(m)).join(" · ");
+  return minuti[minuti.length - 1] > 0 ? testo + " min" : testo;
+}
+function lineaBadge(routeId) {
+  const info = routeInfo.get(routeId);
+  const cls = "t-" + ((info && CLASSE_TIPO[info.tipo]) || "other");
+  return '<span class="ln ' + cls + '">' + esc(displayName(routeId)) + "</span>";
+}
+
+// --- Metro: prossimi treni dall'orario programmato ---
+let orariMetro = null;          // il file, caricato la prima volta che serve
+async function caricaOrariMetro() {
+  if (orariMetro) return orariMetro;
+  const r = await fetch(FILE_ORARI_METRO);
+  if (!r.ok) throw new Error(FILE_ORARI_METRO + ": " + r.status);
+  const dati = await r.json();
+  // trasformo ogni elenco di giorni in un Set: controllare se contiene una data diventa immediato
+  Object.keys(dati.servizi).forEach(sid => { dati.servizi[sid] = new Set(dati.servizi[sid]); });
+  orariMetro = dati;
+  return dati;
+}
+async function arriviMetro(f) {
+  let dati;
+  try { dati = await caricaOrariMetro(); }
+  catch (e) { return '<p class="arr-note">Orari della metro non disponibili: manca il file ' + esc(FILE_ORARI_METRO) + ".</p>"; }
+  const orariFermata = dati.fermate[f.id];
+  if (!orariFermata) return '<p class="arr-note">Nessun orario per questa fermata.</p>';
+
+  // Guardo ieri, oggi e domani: le corse dopo mezzanotte appartengono al giorno prima,
+  // e a fine serata servono già i primi treni del giorno dopo.
+  const ora = oraTorino();
+  const perVerso = {};
+  [-1, 0, 1].forEach(delta => {
+    const giorno = dataGTFS(ora.y, ora.m, ora.d, delta);
+    Object.entries(orariFermata).forEach(([sid, versi]) => {
+      if (!dati.servizi[sid] || !dati.servizi[sid].has(giorno)) return;
+      Object.entries(versi).forEach(([verso, minuti]) => {
+        minuti.forEach(m => {
+          const assoluto = m + delta * 1440;                       // minuti contati dalla mezzanotte di oggi
+          if (assoluto >= ora.minuti && assoluto <= ora.minuti + 240) {
+            (perVerso[verso] = perVerso[verso] || []).push(assoluto);
+          }
+        });
+      });
+    });
+  });
+
+  const versi = Object.keys(perVerso).sort();
+  if (!versi.length) return '<p class="arr-note">Nessun treno nelle prossime 4 ore.</p>';
+  let html = '<p class="arr-head">Arrivi in fermata:</p><ul class="arr">';
+  versi.forEach(verso => {
+    // i prossimi 3 treni in quella direzione, come minuti mancanti
+    const prossimi = [...new Set(perVerso[verso])].sort((a, b) => a - b).slice(0, 3).map(m => m - ora.minuti);
+    html += '<li><span class="dest">Verso ' + esc(nomeStazione(verso)) + '</span><span class="tra">' + tempi(prossimi) + "</span></li>";
+  });
+  return html + '</ul><p class="arr-note">Orario programmato: GTT non pubblica dati in tempo reale per la metro.</p>';
+}
+
+// --- Bus e tram: previsioni in tempo reale dal feed TripUpdates ---
+// Tengo il feed in memoria per qualche secondo, così aprire più fermate di fila non lo riscarica ogni volta.
+let tuCache = { quando: 0, dati: null, inCorso: null };
+function previsioni() {
+  if (tuCache.dati && Date.now() - tuCache.quando < (AGGIORNA_ARRIVI_SECONDI - 5) * 1000) return Promise.resolve(tuCache.dati);
+  if (tuCache.inCorso) return tuCache.inCorso;
+  tuCache.inCorso = fetchFeed(TU_URL)
+    .then(dati => { tuCache = { quando: Date.now(), dati, inCorso: null }; return dati; })
+    .catch(err => { tuCache.inCorso = null; throw err; });
+  return tuCache.inCorso;
+}
+async function arriviLive(f) {
+  let feed;
+  try { feed = await previsioni(); }
+  catch (e) { return '<p class="arr-note">Previsioni non raggiungibili in questo momento.</p>'; }
+
+  const adesso = Date.now() / 1000;
+  const arrivi = [];
+  // Ogni "entity" è una corsa in servizio; stop_time_update elenca le sue prossime fermate con l'orario previsto
+  (feed.entity || []).forEach(ent => {
+    const tu = ent.trip_update;
+    if (!tu || !tu.trip) return;
+    (tu.stop_time_update || []).forEach(s => {
+      if (String(s.stop_id) !== String(f.id)) return;
+      if (s.schedule_relationship === "SKIPPED" || s.schedule_relationship === 1) return;   // fermata saltata
+      const ev = s.arrival || s.departure;
+      if (!ev || !ev.time) return;
+      const quando = Number(ev.time);                    // secondi dal 1970, come nel feed
+      if (quando < adesso - 30) return;                  // già passato
+      arrivi.push({ routeId: String(tu.trip.route_id), quando, ritardo: typeof ev.delay === "number" ? ev.delay : null });
+    });
+  });
+  arrivi.sort((a, b) => a.quando - b.quando);
+
+  if (!arrivi.length) return '<p class="arr-note">Nessun passaggio con previsione in tempo reale al momento.</p>';
+
+  // Raggruppo per linea: una riga per linea, con i prossimi 3 mezzi.
+  // Una Map ricorda l'ordine di inserimento, quindi la prima linea è quella che arriva per prima.
+  const perLinea = new Map();
+  arrivi.forEach(a => {
+    if (!perLinea.has(a.routeId)) perLinea.set(a.routeId, []);
+    perLinea.get(a.routeId).push(a);
+  });
+  let html = '<p class="arr-head">Arrivi in fermata:</p><ul class="arr">';
+  [...perLinea.entries()].slice(0, 8).forEach(([routeId, lista]) => {
+    const prossimi = lista.slice(0, 3);
+    const minuti = prossimi.map(a => Math.round((a.quando - adesso) / 60));
+    // ritardo del primo mezzo, se supera un minuto
+    const r = prossimi[0].ritardo;
+    const late = r != null && r >= 60 ? '<span class="late">+' + Math.round(r / 60) + " min</span>" : "";
+    html += "<li>" + lineaBadge(routeId) + late + '<span class="tra">' + tempi(minuti) + "</span></li>";
+  });
+  return html + '</ul><p class="arr-note">In tempo reale, da BusOne e GTT.</p>';
+}
+
+// Apre il fumetto: prima l'intestazione con "Caricamento…", poi gli arrivi,
+// che si aggiornano finché il fumetto resta aperto.
+let timerArrivi = null;
+function apriFermata(popup, f) {
+  clearTimeout(timerArrivi);
+  popup.setContent(stopHeader(f) + '<p class="arr-note">Caricamento degli arrivi…</p>');
+  const aggiorna = async () => {
+    const isMetro = servita(f, metroIds, metroNames);
+    const html = isMetro ? await arriviMetro(f) : await arriviLive(f);
+    if (!popup.isOpen()) return;                           // nel frattempo l'hai chiuso
+    popup.setContent(stopHeader(f) + html);
+    timerArrivi = setTimeout(aggiorna, AGGIORNA_ARRIVI_SECONDI * 1000);
+  };
+  aggiorna();
+}
+// Icone: quadratino nero per le fermate, quadrato rosso con la M per la metro.
+// divIcon disegna l'icona con HTML e CSS (classi .stop-sq e .metro-st nello stile): niente immagini da scaricare.
+const ICONA_FERMATA = L.divIcon({ className: "stop-sq", html: "<i></i>", iconSize: [0, 0], popupAnchor: [0, -5] });
+const ICONA_METRO = L.divIcon({ className: "metro-st", html: "<i>M</i>", iconSize: [0, 0], popupAnchor: [0, -8] });
+
+// Collega a un pallino di fermata il fumetto con gli arrivi.
+// Riuso: lo stesso schema (fumetto vuoto + contenuto riempito all'apertura) serve per qualsiasi dato da scaricare al clic.
+function fumettoFermata(marker, f) {
+  return marker
+    .bindPopup("", { autoPan: false, minWidth: 220 })
+    .on("popupopen", e => apriFermata(e.popup, f))
+    .on("popupclose", () => clearTimeout(timerArrivi));
 }
 
 // fetch scarica un file; .json() lo trasforma in un oggetto JavaScript.
@@ -553,6 +807,7 @@ async function loadStatic() {
     fermate = ferm.features.map(feat => ({
       latlng: [feat.geometry.coordinates[1], feat.geometry.coordinates[0]],   // GeoJSON è [lon, lat], Leaflet vuole [lat, lon]
       nome: feat.properties.nome,
+      id: feat.properties.stop_id,           // il codice usato da orari e previsioni
       codice: feat.properties.codice,
       linee: String(feat.properties.linee || "").split(", ").filter(Boolean),
       // codici delle linee (route_id): ci sono se il file viene dalla versione nuova del notebook
@@ -567,8 +822,7 @@ async function loadStatic() {
     // 4) Le stazioni della metro: fermate dove passa almeno una linea della metro
     fermate.forEach(f => {
       if (servita(f, metroIds, metroNames)) {
-        L.circleMarker(f.latlng, { pane: "fermate", className: "station", radius: 6, weight: 3, opacity: 1, fillOpacity: 1 })
-          .bindPopup(() => stopPopup(f), { autoPan: false })
+        fumettoFermata(L.marker(f.latlng, { pane: "fermate", icon: ICONA_METRO, keyboard: false }), f)
           .addTo(stationsLayer);
       }
     });
@@ -583,6 +837,14 @@ async function loadStatic() {
     document.getElementById("static-note").textContent =
       "Percorsi e fermate non disponibili: controlla che i file " + FILE_LINEE + " e " + FILE_FERMATE + " siano nella cartella della pagina.";
   }
+}
+
+// Da un tracciato GeoJSON a coordinate per Leaflet: il GeoJSON scrive [lon, lat], Leaflet vuole [lat, lon].
+// Gestisce sia LineString (una linea) sia MultiLineString (più pezzi).
+function latlngs(feat) {
+  const g = feat.geometry;
+  const inverti = linea => linea.map(([lon, lat]) => [lat, lon]);
+  return g.type === "MultiLineString" ? g.coordinates.map(inverti) : inverti(g.coordinates);
 }
 
 // Evidenzia percorso e fermate delle linee selezionate.
@@ -602,29 +864,32 @@ function updateHighlight(zoom) {
     tracciati.push(...info.features);
   });
 
-  // Disegno a strati, dal basso verso l'alto, perché andata e ritorno spesso passano sulla stessa strada:
-  // 1) un bordo chiaro sotto tutto, 2) le varianti sottili e tratteggiate,
-  // 3) l'andata principale larga, 4) il ritorno principale più stretto sopra.
-  // Dove andata e ritorno coincidono si vede una linea bicolore; dove si separano, ognuno col suo colore.
+  // Andata e ritorno hanno lo stesso spessore e corrono affiancate, come nelle mappe dei trasporti.
+  // Il plugin polylineoffset sposta ogni linea di qualche pixel alla sua destra, nel senso di marcia:
+  // siccome andata e ritorno vanno in versi opposti, finiscono una accanto all'altra da sole.
+  // Se il plugin non si carica, torno al disegno di prima: andata larga e ritorno stretto sopra.
   // direzione "0" = andata, "1" = ritorno (è la colonna direction_id del GTFS).
+  const affianca = typeof L.Polyline.prototype.setOffset === "function";
+  const sposta = affianca ? SPESSORE_LINEA / 2 + 0.5 : 0;
   const disegna = (feats, className, weight) => feats.forEach(feat =>
-    L.geoJSON(feat, { pane: "percorsi", interactive: false, style: { className, weight, opacity: 1 } }).addTo(routeLayer));
+    L.polyline(latlngs(feat), { pane: "percorsi", interactive: false, className, weight, opacity: 1, offset: sposta }).addTo(routeLayer));
   const ritorno = f => String(f.properties.direzione) === "1";
   const principali = tracciati.filter(isPrincipale);
   const varianti = tracciati.filter(f => !isPrincipale(f));
-  disegna(varianti, "route-casing", 6);
-  disegna(principali, "route-casing", 11);
-  disegna(varianti.filter(f => !ritorno(f)), "route-var-andata", 3);
-  disegna(varianti.filter(ritorno), "route-var-ritorno", 3);
-  disegna(principali.filter(f => !ritorno(f)), "route-andata", 7);
-  disegna(principali.filter(ritorno), "route-ritorno", 3.5);
+  const wAndata = affianca ? SPESSORE_LINEA : 7;
+  const wRitorno = affianca ? SPESSORE_LINEA : 3.5;
+  disegna(varianti, "route-casing", 5);
+  disegna(principali, "route-casing", affianca ? SPESSORE_LINEA + 3 : 11);
+  disegna(varianti.filter(f => !ritorno(f)), "route-var-andata", 2.5);
+  disegna(varianti.filter(ritorno), "route-var-ritorno", 2.5);
+  disegna(principali.filter(f => !ritorno(f)), "route-andata", wAndata);
+  disegna(principali.filter(ritorno), "route-ritorno", wRitorno);
 
   // fermate delle linee scelte (escluse le stazioni della metro, già visibili)
   fermate.forEach(f => {
     if (servita(f, metroIds, metroNames)) return;
     if (servita(f, selected, nomiScelti)) {
-      L.circleMarker(f.latlng, { pane: "fermate", className: "stop", radius: 4, weight: 2, opacity: 1, fillOpacity: 1 })
-        .bindPopup(() => stopPopup(f), { autoPan: false })
+      fumettoFermata(L.marker(f.latlng, { pane: "fermate", icon: ICONA_FERMATA, keyboard: false }), f)
         .addTo(stopsLayer);
     }
   });
@@ -677,7 +942,8 @@ function updateIcon(v) {
 
 function popupText(v) {
   const age = Math.max(0, Math.round(Date.now() / 1000 - v.ts));
-  const ageText = age < 60 ? age + " secondi fa" : Math.round(age / 60) + " minuti fa";
+  const min = Math.round(age / 60);
+  const ageText = age < 60 ? "meno di un minuto fa" : min === 1 ? "1 minuto fa" : min + " minuti fa";
   const info = routeInfo.get(v.routeId);
   const tipo = info && TIPI[info.tipo] ? TIPI[info.tipo] + " " : "Linea ";
   const button = routeInfo.has(v.routeId)
@@ -685,7 +951,7 @@ function popupText(v) {
     : "";
   const verso = v.dir === 0 ? " · andata" : v.dir === 1 ? " · ritorno" : "";
   return "<strong>" + tipo + esc(displayName(v.routeId)) + "</strong>Mezzo " + esc(v.label) + verso +
-         "<br>Posizione di " + ageText + button;
+         "<br>Posizione aggiornata " + ageText + button;
 }
 
 // Il pulsante dentro il fumetto di un mezzo seleziona la sua linea
@@ -803,17 +1069,37 @@ function renderCount() {
   else countEl.textContent = nf(shown) + " su " + nf(total) + " mezzi, sulle linee scelte";
   clearBtn.hidden = selected.size === 0;
 }
+// Barra "Cerca linea": a ogni lettera scritta ridisegno i pulsanti.
+// Invio seleziona la prima linea trovata.
+const searchEl = document.getElementById("search");
+let ricerca = "";
+searchEl.addEventListener("input", () => { ricerca = searchEl.value.trim().toLowerCase(); renderChips(); });
+searchEl.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  const primo = chipsEl.querySelector(".chip");
+  if (primo) primo.click();
+});
+
 function renderChips() {
   // conto i mezzi per linea (per codice route_id)
   const counts = new Map();
   vehicles.forEach(v => counts.set(v.routeId, (counts.get(v.routeId) || 0) + 1));
   selected.forEach(id => { if (!counts.has(id)) counts.set(id, 0); });
-  const ids = [...counts.keys()].sort((a, b) => sortLines(displayName(a), displayName(b)));
+  let ids = [...counts.keys()];
+  if (ricerca) {
+    // Con una ricerca cerco tra TUTTE le linee del file, anche quelle senza mezzi in servizio:
+    // così si possono vedere percorso e fermate di qualsiasi linea.
+    routeInfo.forEach((info, id) => { if (!counts.has(id)) counts.set(id, 0); });
+    // startsWith = "inizia con": scrivendo 4 trovi 4, 42, 46... ma non 14
+    ids = [...counts.keys()].filter(id => displayName(id).toLowerCase().startsWith(ricerca));
+  }
+  ids.sort((a, b) => sortLines(displayName(a), displayName(b)));
   chipsEl.textContent = "";
   if (!ids.length) {
     const p = document.createElement("p");
     p.className = "empty";
-    p.textContent = "Le linee compariranno quando ci saranno mezzi in servizio.";
+    p.textContent = ricerca ? "Nessuna linea trovata." : "Le linee compariranno quando ci saranno mezzi in servizio.";
     chipsEl.appendChild(p);
     return;
   }
@@ -851,12 +1137,13 @@ function refreshVisibility(zoom) {
 }
 
 // Legenda: senza linee scelte spiega i tipi di mezzo, con linee scelte spiega andata e ritorno.
-// Ogni voce è [forma, colore, testo]; forma = "dot" (pallino), "line" (linea) o "stopsw" (fermata).
+// Ogni voce è [forma, colore, testo]; forma = "dot" (pallino), "line" (linea), "dash" (tratteggio),
+// "stopsw" (quadratino della fermata) o "msw" (simbolo della metro).
 const legendEl = document.getElementById("legend");
 function renderLegend() {
   let items;
   if (selected.size === 0) {
-    items = [["dot", "var(--tram)", "Tram"], ["dot", "var(--bus)", "Bus"], ["line", "var(--metro)", "Metro"]];
+    items = [["dot", "var(--tram)", "Tram"], ["dot", "var(--bus)", "Bus"], ["msw", "", "Metro"]];
     let altri = false;
     vehicles.forEach(v => { if (v.iconKey && v.iconKey.startsWith("t-other")) altri = true; });
     if (altri && routeInfo.size) items.push(["dot", "var(--other)", "Altro"]);
@@ -888,16 +1175,18 @@ clearBtn.addEventListener("click", () => { selected.clear(); refreshVisibility(f
 
 /* ---------- aggiornamento periodico dal feed ---------- */
 let useHeaders = true;
-async function fetchFeed() {
+// Scarica un feed di BusOne (di default le posizioni). url = FEED_URL vuol dire:
+// "se non indico un indirizzo, usa quello delle posizioni". Le previsioni lo chiamano con TU_URL.
+async function fetchFeed(url = FEED_URL) {
   const options = { cache: "no-store" };
   if (useHeaders) options.headers = { "X-BusOne-Client": CLIENT, "X-BusOne-Use": USO };
   try {
-    const res = await fetch(FEED_URL, options);
+    const res = await fetch(url, options);
     if (!res.ok) throw new Error("HTTP " + res.status);
     return await res.json();
   } catch (err) {
     // se il server non accetta le intestazioni da un browser, riprovo senza
-    if (useHeaders) { useHeaders = false; return fetchFeed(); }
+    if (useHeaders) { useHeaders = false; return fetchFeed(url); }
     throw err;
   }
 }
